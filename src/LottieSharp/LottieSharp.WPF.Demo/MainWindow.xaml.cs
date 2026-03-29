@@ -36,7 +36,7 @@ namespace LottieSharp.WPF.Demo
 
         private void ButtonPlay_Click(object sender, RoutedEventArgs e)
         {
-            lottieView.PlayAnimation();
+            lottieView.PlayAnimationReverse();
         }
 
         private void ButtonStop_Click(object sender, RoutedEventArgs e)

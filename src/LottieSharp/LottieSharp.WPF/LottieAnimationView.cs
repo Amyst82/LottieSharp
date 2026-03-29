@@ -29,6 +29,7 @@ namespace LottieSharp.WPF
         private int loopCount;
         System.Windows.Resources.StreamResourceInfo? resourceInfo;
         private bool disposedValue;
+        private bool runningReverse = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LottieAnimationView"/> class.
@@ -125,7 +126,30 @@ namespace LottieSharp.WPF
         {
             if (EnsureVisibleAndEnabled())
             {
-                
+                runningReverse = false;
+                timer?.Start();
+                watch?.Start();
+                IsPlaying = true;
+            }
+            else
+            {
+                timer?.Stop();
+                watch?.Stop();
+            }
+        }
+        /// <summary>
+        /// Starts or resumes the animation playback in reverse.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// lottieView.PlayAnimationReverse();
+        /// </code>
+        /// </example>
+        public virtual void PlayAnimationReverse()
+        {
+            if (EnsureVisibleAndEnabled())
+            {
+                runningReverse = true;
                 timer?.Start();
                 watch?.Start();
                 IsPlaying = true;
@@ -367,8 +391,7 @@ namespace LottieSharp.WPF
             if (Animation.TryCreate(fileStream, out animation))
             {
                 animation.Seek(0);
-                Info = new AnimationInfo(animation.Version, animation.Duration, animation.Fps, animation.InPoint,
-                    animation.OutPoint);
+                Info = new AnimationInfo(animation.Version, animation.Duration, animation.Fps, animation.InPoint, animation.OutPoint);
             }
             else
             {
@@ -395,6 +418,7 @@ namespace LottieSharp.WPF
             }
         }
 
+
         /// <summary>
         /// Renders the animation on the control's surface.
         /// </summary>
@@ -412,7 +436,10 @@ namespace LottieSharp.WPF
             }
             else if (animation != null)
             {
-                animation.SeekFrameTime((float)watch.Elapsed.TotalSeconds);
+                if (runningReverse)
+                    animation.SeekFrameTime(animation.Duration.TotalSeconds - (float)watch.Elapsed.TotalSeconds);
+                else
+                    animation.SeekFrameTime((float)watch.Elapsed.TotalSeconds);
 
                 if (watch.Elapsed.TotalSeconds > animation.Duration.TotalSeconds)
                 {
@@ -426,6 +453,24 @@ namespace LottieSharp.WPF
                         {
                             loopCount--;
                             watch.Restart();
+                        }
+                        else
+                        {
+                            StopAnimation();
+                        }
+                    }
+                    else // RepeatMode.Reverse
+                    {
+                        if (RepeatCount == Defaults.RepeatCountInfinite)
+                        {
+                            watch.Restart();
+                            runningReverse = !runningReverse;
+                        }
+                        else if (RepeatCount > 0 && loopCount > 0)
+                        {
+                            loopCount--;
+                            watch.Restart();
+                            runningReverse = !runningReverse;
                         }
                         else
                         {
